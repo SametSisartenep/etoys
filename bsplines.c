@@ -108,7 +108,7 @@ main(int argc, char *argv[])
 				redraw();
 			}
 			if((e.mouse.buttons&4) != 0){
-				if(npt > 1){
+				if(npt > 2){
 					b.pts = pts;
 					b.npt = npt;
 					bsplines = realloc(bsplines, ++nbspline*sizeof(Bspline));
