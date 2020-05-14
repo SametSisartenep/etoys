@@ -13,8 +13,8 @@ enum {
 };
 
 enum {
-	TW = 32,
-	TH = 32
+	TW = 16,
+	TH = 8
 };
 
 typedef struct Tile Tile;
@@ -27,21 +27,16 @@ struct Tile
 
 Image *pal[NCOLOR];
 Tile tiles[] = {
-	{ .name = "tl", .id = 'n' },
-	{ .name = "tr", .id = 'e' },
-	{ .name = "bl", .id = 'w' },
-	{ .name = "br", .id = 's' },
-	{ .name = "hori", .id = 'H' },
-	{ .name = "vert", .id = 'V' },
-	{ .name = "grass", .id = 'g' }
+	{ .name = "empty", .id = 'e' },
+	{ .name = "filled", .id = 'f' }
 };
 RFrame worldrf;
 char *map[] = {
-	"nHHHe",
-	"VgggV",
-	"VgggV",
-	"VgggV",
-	"wHHHs"
+	"eeeee",
+	"eefee",
+	"efefe",
+	"eefee",
+	"eefee"
 };
 Point mpos;
 
@@ -107,7 +102,7 @@ redraw(void)
 	draw(screen, screen->r, pal[Cbg], nil, ZP);
 	for(i = 0; i < nelem(map); i++)
 		for(row = map[i]; *row; row++){
-			dp = Pt2((row-map[i])*TW,i*TH,1);
+			dp = Pt2((row-map[i]-i)*TW/2,(i+row-map[i])*TH/2,1);
 			for(j = 0; j < nelem(tiles); j++)
 				if(tiles[j].id == *row)
 					draw(screen, Rpt(toscreen(dp),addpt(toscreen(dp), Pt(TW,TH))), tiles[j].img, nil, ZP);

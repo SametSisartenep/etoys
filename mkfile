@@ -6,6 +6,7 @@ TARG=\
 	beziers\
 	bsplines\
 	grid\
+	isometric\
 
 HFILES=\
 	libgeometry/geometry.h\
