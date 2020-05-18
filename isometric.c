@@ -125,6 +125,17 @@ drawgrid(void)
 }
 
 void
+drawtile(Tile *t, Point2 cell)
+{
+	Point p;
+	cell.x *= TW;
+	cell.y *= TH;
+	p = toscreen(cell);
+	p.x -= TW/2;
+	draw(screen, Rpt(p,addpt(p, Pt(TW,TH))), t->img, nil, ZP);
+}
+
+void
 redraw(void)
 {
 	Point2 dp;
@@ -134,15 +145,15 @@ redraw(void)
 	draw(screen, screen->r, pal[Cbg], nil, ZP);
 	for(i = 0; i < nelem(map); i++)
 		for(row = map[i]; *row; row++){
-			dp = Pt2((row-map[i])*TW,(i)*TH,1);
+			dp = Pt2(row-map[i],i,1);
 			for(j = 0; j < nelem(tiles); j++)
 				if(tiles[j].id == *row)
-					draw(screen, Rpt(subpt(toscreen(dp), Pt(TW/2,0)),addpt(toscreen(dp), Pt(TW,TH))), tiles[j].img, nil, ZP);
+					drawtile(&tiles[j], dp);
 		}
 	dp = fromscreen(mpos);
-	dp.x = ((int)dp.x/TW)*TW;
-	dp.y = ((int)dp.y/TH)*TH;
-	draw(screen, Rpt(subpt(toscreen(dp), Pt(TW/2,0)),addpt(toscreen(dp), Pt(TW,TH))), tfocus->img, nil, ZP);
+	dp.x = (int)dp.x/TW;
+	dp.y = (int)dp.y/TH;
+	drawtile(tfocus, dp);
 	if(showgrid)
 		drawgrid();
 	drawstats();
