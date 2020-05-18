@@ -39,7 +39,7 @@ RFrame worldrf;
 char *map[] = {
 	"eeeee",
 	"eefee",
-	"efefe",
+	"efbfe",
 	"eefee",
 	"eefee"
 };
@@ -132,7 +132,8 @@ drawtile(Tile *t, Point2 cell)
 	cell.y *= TH;
 	p = toscreen(cell);
 	p.x -= TW/2;
-	draw(screen, Rpt(p,addpt(p, Pt(TW,TH))), t->img, nil, ZP);
+	p.y -= Dy(t->img->r)-TH;
+	draw(screen, Rpt(p,addpt(p, Pt(TW,Dy(t->img->r)))), t->img, nil, ZP);
 }
 
 void
@@ -158,6 +159,25 @@ redraw(void)
 		drawgrid();
 	drawstats();
 	flushimage(display, 1);
+}
+
+void
+lmb(Mouse *m)
+{
+	Point2 mp;
+	Point cell;
+	char buf[2];
+
+	mp = fromscreen(mpos);
+	if(mp.x < 0 || mp.y < 0)
+		return;
+	cell.x = mp.x/TW;
+	cell.y = mp.y/TH;
+	if(cell.y >= nelem(map) || cell.x >= strlen(map[cell.y]))
+		return;
+	snprint(buf, sizeof buf, "%c", map[cell.y][cell.x]);
+	if(eenter("tile id", buf, sizeof buf, m) > 0)
+		map[cell.y][cell.x] = buf[0];
 }
 
 void
@@ -225,7 +245,7 @@ main(int argc, char *argv[])
 		case Emouse:
 			mpos = e.mouse.xy;
 			if((e.mouse.buttons&1) != 0)
-				worldrf.p = Pt2(e.mouse.xy.x,e.mouse.xy.y,1);
+				lmb(&e.mouse);
 			if((e.mouse.buttons&2) != 0)
 				mmb(&e.mouse);
 			redraw();
