@@ -9,6 +9,8 @@ enum {
 	Cbg,
 	Cfg,
 	Ctxtbg,
+	Cgrid0,
+	Cgrid1,
 	NCOLOR
 };
 
@@ -44,6 +46,8 @@ char *map[] = {
 	"wHHHs"
 };
 Point mpos;
+Point2 spacegrid[10][10];
+int showgrid;
 
 Point
 toscreen(Point2 p)
@@ -64,6 +68,8 @@ initpalette(void)
 	pal[Cbg] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DBlack);
 	pal[Cfg] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DDarkblue);
 	pal[Ctxtbg] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPaleyellow);
+	pal[Cgrid0] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DRed);
+	pal[Cgrid1] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DBlue);
 }
 
 void
@@ -78,6 +84,16 @@ inittiles(void)
 		tiles[i].img = readimage(display, fd, 0);
 		close(fd);
 	}
+}
+
+void
+initgrid(void)
+{
+	int i, j;
+
+	for(i = 0; i < nelem(spacegrid); i++)
+		for(j = 0; j < nelem(spacegrid[i]); j++)
+			spacegrid[i][j] = Pt2(j*TW, i*TH, 1);
 }
 
 void
@@ -98,6 +114,28 @@ drawstats(void)
 }
 
 void
+drawgrid(void)
+{
+	int i, j;
+
+	for(i = 0; i < nelem(spacegrid); i++)
+		line(screen, toscreen(spacegrid[i][0]), toscreen(spacegrid[i][nelem(spacegrid[i])-1]), Endsquare, Endsquare, 0, pal[Cgrid0], ZP);
+	for(j = 0; j < nelem(spacegrid[0]); j++)
+		line(screen, toscreen(spacegrid[0][j]), toscreen(spacegrid[nelem(spacegrid)-1][j]), Endsquare, Endsquare, 0, pal[Cgrid1], ZP);
+}
+
+void
+drawtile(Tile *t, Point2 cell)
+{
+	Point p;
+	cell.x *= TW;
+	cell.y *= TH;
+	p = toscreen(cell);
+	p.y -= Dy(t->img->r)-TH;
+	draw(screen, Rpt(p,addpt(p, Pt(TW,Dy(t->img->r)))), t->img, nil, ZP);
+}
+
+void
 redraw(void)
 {
 	Point2 dp;
@@ -107,13 +145,34 @@ redraw(void)
 	draw(screen, screen->r, pal[Cbg], nil, ZP);
 	for(i = 0; i < nelem(map); i++)
 		for(row = map[i]; *row; row++){
-			dp = Pt2((row-map[i])*TW,i*TH,1);
+			dp = Pt2((row-map[i]),i,1);
 			for(j = 0; j < nelem(tiles); j++)
 				if(tiles[j].id == *row)
-					draw(screen, Rpt(toscreen(dp),addpt(toscreen(dp), Pt(TW,TH))), tiles[j].img, nil, ZP);
+					drawtile(&tiles[j], dp);
 		}
 	drawstats();
+	if(showgrid)
+		drawgrid();
 	flushimage(display, 1);
+}
+
+void
+mmb(Mouse *m)
+{
+	enum {
+		SHOWGRID,
+	};
+	static char *items[] = {
+	 [SHOWGRID]	"toggle grid",
+		nil
+	};
+	static Menu menu = { .item = items };
+
+	switch(emenuhit(2, m, &menu)){
+	case SHOWGRID:
+		showgrid ^= 1;
+		break;
+	}
 }
 
 void
@@ -138,8 +197,8 @@ main(int argc, char *argv[])
 		sysfatal("initdraw: %r");
 	initpalette();
 	inittiles();
-	worldrf.p = Pt2(screen->r.min.x,screen->r.min.y,1);
-	worldrf.p = addpt2(worldrf.p, Vec2(Dx(screen->r)/2,Dy(screen->r)/3));
+	initgrid();
+	worldrf.p = Pt2(screen->r.min.x+Dx(screen->r)/2,screen->r.min.y+Dy(screen->r)/3,1);
 	worldrf.bx = Vec2(1,0);
 	worldrf.by = Vec2(0,1);
 	einit(Emouse|Ekeyboard);
@@ -148,8 +207,8 @@ main(int argc, char *argv[])
 		switch(event(&e)){
 		case Emouse:
 			mpos = e.mouse.xy;
-			if((e.mouse.buttons&1) != 0)
-				worldrf.p = Pt2(e.mouse.xy.x,e.mouse.xy.y,1);
+			if((e.mouse.buttons&2) != 0)
+				mmb(&e.mouse);
 			redraw();
 			break;
 		case Ekeyboard:
@@ -167,7 +226,6 @@ eresized(int)
 {
 	if(getwindow(display, Refnone) < 0)
 		sysfatal("resize failed");
-	worldrf.p = Pt2(screen->r.min.x,screen->r.min.y,1);
-	worldrf.p = addpt2(worldrf.p, Vec2(Dx(screen->r)/2,Dy(screen->r)/3));
+	worldrf.p = Pt2(screen->r.min.x+Dx(screen->r)/2,screen->r.min.y+Dy(screen->r)/3,1);
 	redraw();
 }
