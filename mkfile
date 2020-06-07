@@ -8,6 +8,7 @@ TARG=\
 	grid\
 	isometric\
 	ptinline\
+	chain\
 
 HFILES=\
 	libgeometry/geometry.h\
