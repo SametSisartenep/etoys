@@ -1,6 +1,7 @@
 #include <u.h>
 #include <libc.h>
 #include <draw.h>
+#include <ctype.h>
 
 int
 max(int a, int b)
@@ -46,7 +47,7 @@ ptinline(Point p, Point q, Point t)
 void
 usage(void)
 {
-	fprint(2, "usage: %s\n", argv0);
+	fprint(2, "usage: %s x0 y0 x1 y1\n", argv0);
 	exits("usage");
 }
 
@@ -61,22 +62,32 @@ main(int argc, char *argv[])
 	ARGBEGIN{
 	default: usage();
 	}ARGEND;
-	if(argc > 0)
+	if(argc != 4)
 		usage();
 
-	pts[0] = Pt(0,0);
-	pts[1] = Pt(2,2);
+	pts[0].x = strtol(argv[0], &p, 10);
+	if(*p != 0)
+		usage();
+	pts[0].y = strtol(argv[1], &p, 10);
+	if(*p != 0)
+		usage();
+	pts[1].x = strtol(argv[2], &p, 10);
+	if(*p != 0)
+		usage();
+	pts[1].y = strtol(argv[3], &p, 10);
+	if(*p != 0)
+		usage();
 
 	while((n = read(0, buf, sizeof(buf)-1)) > 0){
 		buf[n-1] = buf[n] = 0;
 
 		pts[2].x = strtol(buf, &p, 10);
-		if(p == nil || *p == 0){
+		if(!isspace(*p)){
 			fprint(2, "wrong x coordinate\n");
 			continue;
 		}
 		pts[2].y = strtol(p, &p, 10);
-		if(p == nil || *p != 0){
+		if(*p != 0){
 			fprint(2, "wrong y coordinate\n");
 			continue;
 		}
