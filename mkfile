@@ -7,6 +7,7 @@ TARG=\
 	bsplines\
 	grid\
 	isometric\
+	ptinline\
 
 HFILES=\
 	libgeometry/geometry.h\

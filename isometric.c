@@ -128,6 +128,7 @@ void
 drawtile(Tile *t, Point2 cell)
 {
 	Point p;
+
 	cell.x *= TW;
 	cell.y *= TH;
 	p = toscreen(cell);
