@@ -9,6 +9,7 @@ TARG=\
 	isometric\
 	ptinline\
 	chain\
+	imagelerp\
 
 HFILES=\
 	libgeometry/geometry.h\
