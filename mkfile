@@ -10,6 +10,7 @@ TARG=\
 	ptinline\
 	chain\
 	imagelerp\
+	rframeviz\
 
 HFILES=\
 	libgeometry/geometry.h\
