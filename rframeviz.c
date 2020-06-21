@@ -61,6 +61,12 @@ ptinrect2(Point2 p, Rectangle2 r)
 		p.y >= r.min.y && p.y < r.max.y;
 }
 
+Point2
+perppt2(Point2 p)
+{
+	return Pt2(-p.y,p.x,p.w);
+}
+
 void
 initcontainers(Rectangle parent)
 {
@@ -110,9 +116,52 @@ initpalette(void)
 }
 
 void
+drawaxes(Container *c)
+{
+	Point2 painter;
+
+	/* draw positive x axis */
+	painter = c->p;
+	while(ptinrect2(painter, c->bbox)){
+		line(screen, toscreen(painter), toscreen(addpt2(painter, mulpt2(c->bx, 10))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		painter = addpt2(painter, mulpt2(c->bx, 10));
+		/* unit markers */
+		line(screen, toscreen(painter), toscreen(addpt2(painter, mulpt2(normvec2(perppt2(c->bx)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		line(screen, toscreen(painter), toscreen(subpt2(painter, mulpt2(normvec2(perppt2(c->bx)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+	}
+	/* draw negative x axis */
+	painter = c->p;
+	while(ptinrect2(painter, c->bbox)){
+		line(screen, toscreen(painter), toscreen(subpt2(painter, mulpt2(c->bx, 10))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		painter = subpt2(painter, mulpt2(c->bx, 10));
+		/* unit markers */
+		line(screen, toscreen(painter), toscreen(addpt2(painter, mulpt2(normvec2(perppt2(c->bx)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		line(screen, toscreen(painter), toscreen(subpt2(painter, mulpt2(normvec2(perppt2(c->bx)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+	}
+
+	/* draw positive y axis */
+	painter = c->p;
+	while(ptinrect2(painter, c->bbox)){
+		line(screen, toscreen(painter), toscreen(addpt2(painter, mulpt2(c->by, 10))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		painter = addpt2(painter, mulpt2(c->by, 10));
+		/* unit markers */
+		line(screen, toscreen(painter), toscreen(addpt2(painter, mulpt2(normvec2(perppt2(c->by)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		line(screen, toscreen(painter), toscreen(subpt2(painter, mulpt2(normvec2(perppt2(c->by)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+	}
+	/* draw negative y axis */
+	painter = c->p;
+	while(ptinrect2(painter, c->bbox)){
+		line(screen, toscreen(painter), toscreen(subpt2(painter, mulpt2(c->by, 10))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		painter = subpt2(painter, mulpt2(c->by, 10));
+		/* unit markers */
+		line(screen, toscreen(painter), toscreen(addpt2(painter, mulpt2(normvec2(perppt2(c->by)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+		line(screen, toscreen(painter), toscreen(subpt2(painter, mulpt2(normvec2(perppt2(c->by)), 4))), Endsquare, Endsquare, 0, pal[PCFg], ZP);
+	}
+}
+
+void
 drawcontainers(void)
 {
-	static Rectangle UR = {0,0,1,1};	/* unit rectangle */
 	char buf[128];
 	int i;
 
@@ -120,8 +169,7 @@ drawcontainers(void)
 	line(screen, addpt(screen->r.min, Pt(0,Dy(screen->r)/2)), subpt(screen->r.max, Pt(0,Dy(screen->r)/2)), Endsquare, Endsquare, 0, pal[PCFg], ZP);
 
 	for(i = 0; i < nelem(containers); i++){
-		/* TODO: replace for an axis. */
-		draw(screen, rectaddpt(UR, toscreen(containers[i].p)), pal[PCAux], nil, ZP);
+		drawaxes(&containers[i]);
 
 		if(ptinrect2(invrframexform(thepoint, containers[i]), containers[i].bbox))
 			fillellipse(screen, toscreen(invrframexform(thepoint, containers[i])), 2, 2, pal[PCAux], ZP);
