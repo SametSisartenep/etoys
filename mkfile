@@ -11,6 +11,7 @@ TARG=\
 	chain\
 	imagelerp\
 	rframeviz\
+	ptinpoly\
 
 HFILES=\
 	libgeometry/geometry.h\
