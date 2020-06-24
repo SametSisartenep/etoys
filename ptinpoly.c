@@ -41,8 +41,9 @@ polygonpush(Polygon *poly, Point2 p)
 {
 	poly->pts = realloc(poly->pts, ++poly->npts*sizeof(Point2));
 	poly->pts[poly->npts-1] = p;
-	poly->scrpts = realloc(poly->scrpts, poly->npts*sizeof(Point));
+	poly->scrpts = realloc(poly->scrpts, (poly->npts+1)*sizeof(Point));
 	poly->scrpts[poly->npts-1] = toscreen(p);
+	poly->scrpts[poly->npts] = poly->scrpts[0]; /* close the polygon */
 }
 
 Polygon*
@@ -58,9 +59,10 @@ newpolygon(Point2 *pts, int npts)
 		poly->npts = 0;
 	}else{
 		poly->pts = pts;
-		poly->scrpts = malloc(npts*sizeof(Point));
+		poly->scrpts = malloc((npts+1)*sizeof(Point));
 		for(i = 0; i < npts; i++)
 			poly->scrpts[i] = toscreen(poly->pts[i]);
+		poly->scrpts[npts] = poly->scrpts[0]; /* close the polygon */
 		poly->npts = npts;
 	}
 	poly->push = polygonpush;
@@ -97,7 +99,7 @@ initpalette(void)
 {
 	pal[PCBg] = allocimage(display, UR, screen->chan, 1, DWhite);
 	pal[PCFg] = allocimage(display, UR, screen->chan, 1, DBlack);
-	pal[PCPoly] = allocimage(display, UR, screen->chan, 1, DPaleblue);
+	pal[PCPoly] = allocimage(display, UR, screen->chan, 1, DPalebluegreen);
 	pal[PCPolydark] = allocimage(display, UR, screen->chan, 1, DDarkblue);
 	pal[PCAux] = allocimage(display, UR, screen->chan, 1, DRed);
 }
@@ -122,8 +124,8 @@ redraw(void)
 	lockdisplay(display);
 	draw(screen, screen->r, pal[PCBg], nil, ZP);
 	fillpoly(screen, thepoly->scrpts, thepoly->npts, 1, pal[PCPoly], ZP);
-	poly(screen, thepoly->scrpts, thepoly->npts, Enddisc, Enddisc, 1, pal[PCPolydark], ZP);
-	for(i = 0; i < thepoly->npts; i++)
+	poly(screen, thepoly->scrpts, thepoly->npts > 0? thepoly->npts+1: 0, Enddisc, Enddisc, 1, pal[PCPolydark], ZP);
+	for(i = 0; thepoly->npts > 0 && i < thepoly->npts+1; i++)
 		fillellipse(screen, thepoly->scrpts[i], 2, 2, pal[PCPolydark], ZP);
 	fillellipse(screen, toscreen(thepoint), 2, 2, pal[PCAux], ZP);
 	drawbanner();
