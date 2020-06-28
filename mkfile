@@ -12,6 +12,7 @@ TARG=\
 	imagelerp\
 	rframeviz\
 	ptinpoly\
+	ptintriangle\
 
 HFILES=\
 	libgeometry/geometry.h\
