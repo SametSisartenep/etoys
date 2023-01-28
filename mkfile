@@ -13,6 +13,7 @@ TARG=\
 	rframeviz\
 	ptinpoly\
 	ptintriangle\
+	barycentric\
 
 HFILES=\
 	libgeometry/geometry.h\
