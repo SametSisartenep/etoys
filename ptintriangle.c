@@ -50,20 +50,20 @@ fromscreen(Point p)
  * p to the left: -
  * p on the edge: 0
  */
-static int
-edgeptcmp(Point2 e0, Point2 e1, Point2 p)
-{
-	Point3 e0p, e01, r;
-
-	p = subpt2(p, e0);
-	e1 = subpt2(e1, e0);
-	e0p = Vec3(p.x,p.y,0);
-	e01 = Vec3(e1.x,e1.y,0);
-	r = crossvec3(e0p, e01);
-
-	/* clamp to avoid overflow */
-	return fclamp(r.z, -1, 1); /* e0.x*e1.y - e0.y*e1.x */
-}
+//static int
+//edgeptcmp(Point2 e0, Point2 e1, Point2 p)
+//{
+//	Point3 e0p, e01, r;
+//
+//	p = subpt2(p, e0);
+//	e1 = subpt2(e1, e0);
+//	e0p = Vec3(p.x,p.y,0);
+//	e01 = Vec3(e1.x,e1.y,0);
+//	r = crossvec3(e0p, e01);
+//
+//	/* clamp to avoid overflow */
+//	return fclamp(r.z, -1, 1); /* e0.x*e1.y - e0.y*e1.x */
+//}
 
 int
 ptintriangle(Point2 p, Triangle t)

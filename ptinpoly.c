@@ -69,17 +69,18 @@ newpolygon(Point2 *pts, int npts)
 	return poly;
 }
 
-int
-ptinpoly(Point2 p, Polygon poly)
-{
-	int i, j, c;
+//int
+//ptinpoly(Point2 p, Polygon poly)
+//{
+//	int i, j, c;
+//
+//	for(i = c = 0, j = poly.npts-1; i < poly.npts; j = i++)
+//		if(p.y < poly.pts[i].y != p.y < poly.pts[j].y &&
+//			p.x < (poly.pts[j].x - poly.pts[i].x) * (p.y - poly.pts[i].y)/(poly.pts[j].y - poly.pts[i].y) + poly.pts[i].x)
+//		c ^= 1;
+//	return c;
+//}
 
-	for(i = c = 0, j = poly.npts-1; i < poly.npts; j = i++)
-		if(p.y < poly.pts[i].y != p.y < poly.pts[j].y &&
-			p.x < (poly.pts[j].x - poly.pts[i].x) * (p.y - poly.pts[i].y)/(poly.pts[j].y - poly.pts[i].y) + poly.pts[i].x)
-		c ^= 1;
-	return c;
-}
 
 Point
 toscreen(Point2 p)
@@ -137,7 +138,7 @@ void
 rmb(Mousectl *mc)
 {
 	thepoint = fromscreen(mc->xy);
-	isinside = ptinpoly(thepoint, *thepoly);
+	isinside = ptinpoly(thepoint, thepoly->pts, thepoly->npts);
 }
 
 void
