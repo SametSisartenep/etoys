@@ -27,6 +27,9 @@ struct Tile
 	Image *img;
 };
 
+RFrame screenrf;
+RFrame worldrf;
+RFrame tilerf;
 Image *pal[NCOLOR];
 Tile tiles[] = {
 	{ .name = "empty", .id = 'e' },
@@ -35,29 +38,75 @@ Tile tiles[] = {
 	{ .name = "focus", .id = 'F' }
 };
 Tile *tfocus;
-RFrame worldrf;
 char *map[] = {
 	"eeeee",
 	"eefee",
 	"efbfe",
 	"eefee",
-	"eefee"
+	"eefee",
 };
 Point mpos;
-Point2 spacegrid[10][10];
+Point spacegrid[10][10];
 int showgrid;
 
-Point
-toscreen(Point2 p)
+Point2
+rfxform(Point2 p, RFrame rf)
 {
-	p = invrframexform(p, worldrf);
-	return Pt(p.x,p.y);
+	Matrix m = {
+		rf.bx.x, rf.by.x, 0,
+		rf.bx.y, rf.by.y, 0,
+		0, 0, 1
+	};
+	invm(m);
+	return xform(subpt2(p, rf.p), m);
+}
+
+Point2
+invrfxform(Point2 p, RFrame rf)
+{
+	Matrix m = {
+		rf.bx.x, rf.by.x, 0,
+		rf.bx.y, rf.by.y, 0,
+		0, 0, 1
+	};
+	return addpt2(xform(p, m), rf.p);
 }
 
 Point2
 fromscreen(Point p)
 {
-	return rframexform(Pt2(p.x,p.y,1), worldrf);
+	return invrfxform(Pt2(p.x,p.y,1), screenrf);
+}
+
+Point
+toscreen(Point2 p)
+{
+	p = rfxform(p, screenrf);
+	return Pt(p.x,p.y);
+}
+
+Point2
+fromworld(Point2 p)
+{
+	return invrfxform(p, worldrf);
+}
+
+Point2
+toworld(Point2 p)
+{
+	return rfxform(p, worldrf);
+}
+
+Point2
+fromtile(Point2 p)
+{
+	return invrfxform(p, tilerf);
+}
+
+Point2
+totile(Point2 p)
+{
+	return rfxform(p, tilerf);
 }
 
 void
@@ -93,7 +142,7 @@ initgrid(void)
 
 	for(i = 0; i < nelem(spacegrid); i++)
 		for(j = 0; j < nelem(spacegrid[i]); j++)
-			spacegrid[i][j] = Pt2(j*TW, i*TH, 1);
+			spacegrid[i][j] = toscreen(fromworld(Pt2(j, i, 1)));
 }
 
 void
@@ -102,15 +151,18 @@ drawstats(void)
 	Point2 mp, p;
 	char s[256];
 
-	mp = fromscreen(mpos);
+	mp = toworld(fromscreen(mpos));
 	snprint(s, sizeof s, "Global %v", mp);
 	stringbg(screen, addpt(screen->r.min, Pt(20,20)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
-	p = Pt2(fmod(mp.x, TW),fmod(mp.y, TH),1);
+	p = Pt2(fmod(mp.x,1),fmod(mp.y,1),1);
 	snprint(s, sizeof s, "Local %v", p);
 	stringbg(screen, addpt(screen->r.min, Pt(20,20+font->height)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
-	p = Pt2((int)mp.x/TW,(int)mp.y/TH,1);
+	p = Pt2((int)mp.x,(int)mp.y,1);
 	snprint(s, sizeof s, "Cell %v", p);
 	stringbg(screen, addpt(screen->r.min, Pt(20,20+font->height*2)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
+	p = totile(fromscreen(mpos));
+	snprint(s, sizeof s, "Tile %v", p);
+	stringbg(screen, addpt(screen->r.min, Pt(20,20+font->height*3)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
 }
 
 void
@@ -119,9 +171,9 @@ drawgrid(void)
 	int i, j;
 
 	for(i = 0; i < nelem(spacegrid); i++)
-		line(screen, toscreen(spacegrid[i][0]), toscreen(spacegrid[i][nelem(spacegrid[i])-1]), Endsquare, Endsquare, 0, pal[Cgrid0], ZP);
+		line(screen, spacegrid[i][0], spacegrid[i][nelem(spacegrid[i])-1], Endsquare, Endsquare, 0, pal[Cgrid0], ZP);
 	for(j = 0; j < nelem(spacegrid[0]); j++)
-		line(screen, toscreen(spacegrid[0][j]), toscreen(spacegrid[nelem(spacegrid)-1][j]), Endsquare, Endsquare, 0, pal[Cgrid1], ZP);
+		line(screen, spacegrid[0][j], spacegrid[nelem(spacegrid)-1][j], Endsquare, Endsquare, 0, pal[Cgrid1], ZP);
 }
 
 void
@@ -129,11 +181,8 @@ drawtile(Tile *t, Point2 cell)
 {
 	Point p;
 
-	cell.x *= TW;
-	cell.y *= TH;
-	p = toscreen(cell);
-	p.x -= TW/2;
-	p.y -= Dy(t->img->r)-TH;
+	p = toscreen(fromtile(cell));
+	p.y -= Dy(t->img->r) - TH; /* XXX hack to draw overheight tile sprites */
 	draw(screen, Rpt(p,addpt(p, Pt(TW,Dy(t->img->r)))), t->img, nil, ZP);
 }
 
@@ -147,14 +196,14 @@ redraw(void)
 	draw(screen, screen->r, pal[Cbg], nil, ZP);
 	for(i = 0; i < nelem(map); i++)
 		for(row = map[i]; *row; row++){
-			dp = Pt2(row-map[i],i,1);
+			dp = Pt2(row-map[i],nelem(map)-i-1,1);
 			for(j = 0; j < nelem(tiles); j++)
 				if(tiles[j].id == *row)
 					drawtile(&tiles[j], dp);
 		}
-	dp = fromscreen(mpos);
-	dp.x = (int)dp.x/TW;
-	dp.y = (int)dp.y/TH;
+	dp = toworld(fromscreen(mpos));
+	dp.x = (int)dp.x;
+	dp.y = (int)dp.y;
 	drawtile(tfocus, dp);
 	if(showgrid)
 		drawgrid();
@@ -169,16 +218,16 @@ lmb(Mouse *m)
 	Point cell;
 	char buf[2];
 
-	mp = fromscreen(mpos);
+	mp = toworld(fromscreen(mpos));
 	if(mp.x < 0 || mp.y < 0)
 		return;
-	cell.x = mp.x/TW;
-	cell.y = mp.y/TH;
+	cell.x = mp.x;
+	cell.y = mp.y;
 	if(cell.y >= nelem(map) || cell.x >= strlen(map[cell.y]))
 		return;
-	snprint(buf, sizeof buf, "%c", map[cell.y][cell.x]);
+	snprint(buf, sizeof buf, "%c", map[nelem(map)-cell.y-1][cell.x]);
 	if(eenter("tile id", buf, sizeof buf, m) > 0)
-		map[cell.y][cell.x] = buf[0];
+		map[nelem(map)-cell.y-1][cell.x] = buf[0];
 }
 
 void
@@ -235,10 +284,17 @@ main(int argc, char *argv[])
 		sysfatal("initdraw: %r");
 	initpalette();
 	inittiles();
-	initgrid();
+	screenrf.p = Pt2(0,0,1);
+	screenrf.bx = Vec2(1,0);
+	screenrf.by = Vec2(0,1);
 	worldrf.p = Pt2(screen->r.min.x+Dx(screen->r)/2,screen->r.min.y+Dy(screen->r)/3,1);
-	worldrf.bx = Vec2(1,2);
-	worldrf.by = Vec2(-0.5,1);
+	worldrf.bx = Vec2(TW/2,TH/2);
+	worldrf.by = Vec2(TW/2,-TH/2);
+	tilerf.p = subpt2(worldrf.p, Vec2(0,TH/2));
+	tilerf.bx = worldrf.bx;
+	tilerf.by = worldrf.by;
+
+	initgrid();
 	einit(Emouse|Ekeyboard);
 	redraw();
 	for(;;)
@@ -267,5 +323,6 @@ eresized(int)
 	if(getwindow(display, Refnone) < 0)
 		sysfatal("resize failed");
 	worldrf.p = Pt2(screen->r.min.x+Dx(screen->r)/2,screen->r.min.y+Dy(screen->r)/3,1);
+	tilerf.p = subpt2(worldrf.p, Vec2(0,TH/2));
 	redraw();
 }
