@@ -49,64 +49,30 @@ Point mpos;
 Point spacegrid[10][10];
 int showgrid;
 
-Point2
-rfxform(Point2 p, RFrame rf)
-{
-	Matrix m = {
-		rf.bx.x, rf.by.x, 0,
-		rf.bx.y, rf.by.y, 0,
-		0, 0, 1
-	};
-	invm(m);
-	return xform(subpt2(p, rf.p), m);
-}
-
-Point2
-invrfxform(Point2 p, RFrame rf)
-{
-	Matrix m = {
-		rf.bx.x, rf.by.x, 0,
-		rf.bx.y, rf.by.y, 0,
-		0, 0, 1
-	};
-	return addpt2(xform(p, m), rf.p);
-}
-
-Point2
-fromscreen(Point p)
-{
-	return invrfxform(Pt2(p.x,p.y,1), screenrf);
-}
-
 Point
-toscreen(Point2 p)
+fromworld(Point2 p)
 {
-	p = rfxform(p, screenrf);
+	p = invrframexform(p, worldrf);
 	return Pt(p.x,p.y);
 }
 
 Point2
-fromworld(Point2 p)
+toworld(Point p)
 {
-	return invrfxform(p, worldrf);
+	return rframexform(Pt2(p.x,p.y,1), worldrf);
 }
 
-Point2
-toworld(Point2 p)
-{
-	return rfxform(p, worldrf);
-}
-
-Point2
+Point
 fromtile(Point2 p)
 {
-	return invrfxform(p, tilerf);
+	p = invrframexform(p, tilerf);
+	return Pt(p.x,p.y);
 }
 
 Point2
-totile(Point2 p)
+totile(Point p)
 {
-	return rfxform(p, tilerf);
+	return rframexform(Pt2(p.x,p.y,1), tilerf);
 }
 
 void
@@ -142,7 +108,7 @@ initgrid(void)
 
 	for(i = 0; i < nelem(spacegrid); i++)
 		for(j = 0; j < nelem(spacegrid[i]); j++)
-			spacegrid[i][j] = toscreen(fromworld(Pt2(j, i, 1)));
+			spacegrid[i][j] = fromworld(Pt2(j, i, 1));
 }
 
 void
@@ -151,7 +117,7 @@ drawstats(void)
 	Point2 mp, p;
 	char s[256];
 
-	mp = toworld(fromscreen(mpos));
+	mp = toworld(mpos);
 	snprint(s, sizeof s, "Global %v", mp);
 	stringbg(screen, addpt(screen->r.min, Pt(20,20)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
 	p = Pt2(fmod(mp.x,1),fmod(mp.y,1),1);
@@ -160,7 +126,7 @@ drawstats(void)
 	p = Pt2((int)mp.x,(int)mp.y,1);
 	snprint(s, sizeof s, "Cell %v", p);
 	stringbg(screen, addpt(screen->r.min, Pt(20,20+font->height*2)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
-	p = totile(fromscreen(mpos));
+	p = totile(mpos);
 	snprint(s, sizeof s, "Tile %v", p);
 	stringbg(screen, addpt(screen->r.min, Pt(20,20+font->height*3)), pal[Cfg], ZP, font, s, pal[Ctxtbg], ZP);
 }
@@ -181,7 +147,7 @@ drawtile(Tile *t, Point2 cell)
 {
 	Point p;
 
-	p = toscreen(fromtile(cell));
+	p = fromtile(cell);
 	p.y -= Dy(t->img->r) - TH; /* XXX hack to draw overheight tile sprites */
 	draw(screen, Rpt(p,addpt(p, Pt(TW,Dy(t->img->r)))), t->img, nil, ZP);
 }
@@ -201,7 +167,7 @@ redraw(void)
 				if(tiles[j].id == *row)
 					drawtile(&tiles[j], dp);
 		}
-	dp = toworld(fromscreen(mpos));
+	dp = toworld(mpos);
 	dp.x = (int)dp.x;
 	dp.y = (int)dp.y;
 	drawtile(tfocus, dp);
@@ -218,7 +184,7 @@ lmb(Mouse *m)
 	Point cell;
 	char buf[2];
 
-	mp = toworld(fromscreen(mpos));
+	mp = toworld(mpos);
 	if(mp.x < 0 || mp.y < 0)
 		return;
 	cell.x = mp.x;
@@ -284,9 +250,6 @@ main(int argc, char *argv[])
 		sysfatal("initdraw: %r");
 	initpalette();
 	inittiles();
-	screenrf.p = Pt2(0,0,1);
-	screenrf.bx = Vec2(1,0);
-	screenrf.by = Vec2(0,1);
 	worldrf.p = Pt2(screen->r.min.x+Dx(screen->r)/2,screen->r.min.y+Dy(screen->r)/3,1);
 	worldrf.bx = Vec2(TW/2,TH/2);
 	worldrf.by = Vec2(TW/2,-TH/2);
