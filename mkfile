@@ -15,5 +15,6 @@ TARG=\
 	ptintriangle\
 	barycentric\
 	lineXcircle\
+	linetiler\
 
 </sys/src/cmd/mkmany
