@@ -16,5 +16,6 @@ TARG=\
 	barycentric\
 	lineXcircle\
 	linetiler\
+	beatlet\
 
 </sys/src/cmd/mkmany
