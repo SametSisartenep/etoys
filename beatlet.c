@@ -79,7 +79,7 @@ beatproc(void *arg)
 
 	t0 = nsec();
 	while(readn(fd, ss, 2*2*NSAMP) > 0){
-		min = 1<<15 - 1;
+		min = (1<<15) - 1;
 		max = 0;
 		for(i = 0; i < nelem(ss); i++){
 			s = (s16int)(ss[i] & 0xFFFF) + (s16int)(ss[i]>>16 & 0xFFFF);
