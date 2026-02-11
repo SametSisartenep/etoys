@@ -17,5 +17,6 @@ TARG=\
 	lineXcircle\
 	linetiler\
 	beatlet\
+	linebbox\
 
 </sys/src/cmd/mkmany
