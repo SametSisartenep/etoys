@@ -104,7 +104,6 @@ initpalette(void)
 void
 drawinfo(void)
 {
-	Triangle2 t;
 	Point3 barypt;
 	Point2 *nextv, *prevv, in0, in1, labelpt;
 	char buf[128];
@@ -113,10 +112,7 @@ drawinfo(void)
 	if(thepoly->npts < 3)
 		return;
 
-	t.p0 = thepoly->pts[0];
-	t.p1 = thepoly->pts[1];
-	t.p2 = thepoly->pts[2];
-	barypt = barycoords(t, thepoint);
+	barypt = barycoords(thepoly->pts[0], thepoly->pts[1], thepoly->pts[2], thepoint);
 
 	snprint(buf, sizeof buf, "homo %v", thepoint);
 	string(screen, toscreen(Pt2(Dx(screen->r)/2 - strlen(buf)/2*font->width,10,1)), pal[PCFg], ZP, font, buf);
